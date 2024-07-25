@@ -1,2 +1,52 @@
-# Attentiveness
-It detects if the eyes are open or closed so I can alert the concerned if someone is sleeping.   
+import IPython
+from IPython.display import Audio
+from IPython.display import display
+import numpy as np
+import cv2
+import time
+faceCascade = cv2.CascadeClassifier('Downloads/haarcascade_frontalface_default.xml')
+eyeCascade = cv2.CascadeClassifier('Downloads/haarcascade_eye.xml')
+cap = cv2.VideoCapture(0)
+cap.set(3,640) # set Width
+cap.set(4,480) # set Height
+sound_file = Audio('Downloads/wake_up.mp3', autoplay=True)
+while True:
+    ret, img = cap.read()
+    img = cv2.flip(img, 1)
+    roi_color = cv2.flip(img, 1)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = faceCascade.detectMultiScale(
+        gray,
+        scaleFactor=1.2,
+        minNeighbors=5,     
+        minSize=(20, 20)
+    )
+    eyes_detected = False
+    for (x,y,w,h) in faces:
+        cv2.rectangle(img,(x,y),(x+w,y+h),(0,0,255),2)
+        roi_gray = gray[y:y+h, x:x+w]
+        roi_color = img[y:y+h, x:x+w]
+        eyes = eyeCascade.detectMultiScale(
+            roi_gray,
+            scaleFactor= 1.5,
+            minNeighbors=10,
+            minSize=(5, 5)
+        )
+        i=1
+        count = 0
+        if len(eyes) == 0:
+            print("Eyes Closed")
+            count = count + i
+            if count>15:
+                display(sound_file)
+        else:
+           print("Eyes Open")
+        for (ex, ey, ew, eh) in eyes:
+            cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+            
+  cv2.imshow('video',img)
+  k = cv2.waitKey(30) & 0xff
+  if k == 27: # press 'ESC' to quit
+      break
+cap.release()
+cv2.destroyAllWindows()
